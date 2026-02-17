@@ -129,9 +129,9 @@ export async function getInventory(): Promise<InventoryItem[]> {
 function mapVariant(data: any): OrderVariant {
     return {
         id: data.id,
-        productId: data.product_id,
+        productId: data.product_id || '',
         productName: data.product_name,
-        variantId: data.variant_id,
+        variantId: data.variant_id || '',
         color: data.color,
         colorHex: data.color_hex,
         quantity: data.quantity,
@@ -172,7 +172,13 @@ export function setCurrentUser(id: string): void {
 export async function getOrders(): Promise<Order[]> {
     const { data, error } = await supabase
         .from('orders')
-        .select('*, variants:order_variants(*), logs:order_logs(*)')
+        .select(`
+            *,
+            variants:order_variants(
+                id, product_name, color, color_hex, quantity, completed, engraving_text, file_name
+            ),
+            logs:order_logs(*)
+        `)
         .order('created_at', { ascending: false });
     if (error) throw error;
     return (data || []).map(mapOrder);
@@ -191,7 +197,13 @@ export async function getOrder(id: string): Promise<Order | undefined> {
 export async function getOrdersByStage(stageId: string): Promise<Order[]> {
     const { data, error } = await supabase
         .from('orders')
-        .select('*, variants:order_variants(*), logs:order_logs(*)')
+        .select(`
+            *,
+            variants:order_variants(
+                id, product_name, color, color_hex, quantity, completed, engraving_text, file_name
+            ),
+            logs:order_logs(*)
+        `)
         .eq('status_id', stageId)
         .order('created_at', { ascending: false });
     if (error) throw error;
@@ -201,7 +213,13 @@ export async function getOrdersByStage(stageId: string): Promise<Order[]> {
 export async function getOrdersForUser(userId: string): Promise<Order[]> {
     const { data, error } = await supabase
         .from('orders')
-        .select('*, variants:order_variants(*), logs:order_logs(*)')
+        .select(`
+            *,
+            variants:order_variants(
+                id, product_name, color, color_hex, quantity, completed, engraving_text, file_name
+            ),
+            logs:order_logs(*)
+        `)
         .eq('assigned_to', userId)
         .order('created_at', { ascending: false });
     if (error) throw error;
@@ -225,22 +243,27 @@ export async function getStageName(stageId: string): Promise<string> {
 }
 
 export async function getStats() {
-    const orders = await getOrders();
+    const { data: orders, error } = await supabase
+        .from('orders')
+        .select('id, deadline, priority, status_id');
+
+    if (error) throw error;
+
     const stages = await getStages();
     const now = new Date();
 
-    const delayed = orders.filter(o =>
+    const delayed = (orders || []).filter(o =>
         new Date(o.deadline) < now &&
-        o.statusId !== stages[stages.length - 1]?.id
+        o.status_id !== stages[stages.length - 1]?.id
     );
-    const blocked = orders.filter(o => o.priority === 'CRITICAL');
+    const blocked = (orders || []).filter(o => o.priority === 'CRITICAL');
 
     const bySt: Record<string, number> = {};
     stages.forEach(s => {
-        bySt[s.id] = orders.filter(o => o.statusId === s.id).length;
+        bySt[s.id] = (orders || []).filter(o => o.status_id === s.id).length;
     });
 
-    return { total: orders.length, delayed: delayed.length, blocked: blocked.length, byStage: bySt };
+    return { total: (orders || []).length, delayed: delayed.length, blocked: blocked.length, byStage: bySt };
 }
 
 // ── Helpers ──
