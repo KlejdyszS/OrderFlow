@@ -1,0 +1,49 @@
+# OrderFlow — Job Jacket System
+
+Modern production management system for engraving companies. Built with Vite, TypeScript, and Supabase.
+
+## 🚀 Quick Start for a New PC
+
+If you just cloned this repository to a new computer, follow these steps:
+
+1. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Configure Environment Variables**
+   Since `.env` is ignored by Git, you must create it manually in the root folder:
+   - Create a file named `.env`
+   - Paste your Supabase credentials (get them from your existing PC or Supabase Dashboard):
+     ```env
+     VITE_SUPABASE_URL=your_project_url
+     VITE_SUPABASE_ANON_KEY=your_anon_key
+     ```
+
+3. **Run the App**
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## 🌐 Local Network Access
+
+To make the app available to other devices in your local network (e.g., tablets on the production floor):
+
+1. **Run with Host Flag**
+   Instead of just `npm run dev`, use:
+   ```bash
+   npx vite --host
+   ```
+
+2. **Access via IP**
+   Vite will display a Network URL (e.g., `http://192.168.1.15:5173/`).
+   Open this URL on any device connected to the same Wi-Fi/LAN.
+
+---
+
+## 🛠 Tech Stack
+- **Frontend**: Vite + TypeScript + Vanilla CSS
+- **Database**: Supabase (Postgres)
+- **Deployment**: Local network exposure + GitHub Backup
