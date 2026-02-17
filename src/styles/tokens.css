@@ -1,0 +1,65 @@
+/* ═══════════════════════════════════════════════════════
+   OrderFlow Design Tokens — "Industrial Pop"
+   ═══════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Backgrounds ── */
+  --bg-main: #111111;
+  --bg-card: #1E1E1E;
+  --bg-input: #2A2A2A;
+  --bg-hover: #2A2A2A;
+
+  /* ── Brand ── */
+  --color-acid: #D4FF00;
+  --color-acid-dim: rgba(212, 255, 0, 0.15);
+  --color-acid-dark: #9ab800;
+
+  /* ── Status Colors ── */
+  --status-new: #3B82F6;
+  --status-production: #F59E0B;
+  --status-done: #10B981;
+  --status-blocked: #EF4444;
+  --status-shipped: #8B5CF6;
+
+  /* ── Text ── */
+  --text-primary: #FFFFFF;
+  --text-secondary: #999999;
+  --text-muted: #666666;
+
+  /* ── Borders ── */
+  --border-color: #333333;
+  --border-std: 1px solid #333333;
+
+  /* ── Typography ── */
+  --font-display: 'Space Grotesk', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* ── Spacing ── */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 48px;
+
+  /* ── Radius ── */
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* ── Shadows ── */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-modal: 0 -4px 24px rgba(0, 0, 0, 0.6);
+
+  /* ── Transitions ── */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── Layout ── */
+  --nav-height: 64px;
+  --header-height: 56px;
+  --max-width: 100%;
+}
