@@ -101,3 +101,13 @@ export function statusBadgeClass(stageId: string): string {
     };
     return `badge ${map[stageId] || 'badge-new'}`;
 }
+
+export function formatPriority(priority: string): string {
+    const map: Record<string, string> = {
+        'LOW': 'Niski',
+        'MEDIUM': 'Średni',
+        'HIGH': 'Wysoki',
+        'CRITICAL': 'Krytyczny'
+    };
+    return map[priority.toUpperCase()] || priority;
+}

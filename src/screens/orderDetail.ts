@@ -4,7 +4,7 @@
 
 import { getOrder, getStageColor, getStageName, getNextStage, advanceOrderStatus, toggleVariantComplete, addOrderLog, deleteOrder } from '../data/store';
 import { navigate } from '../router';
-import { timeAgo, formatDate, totalUnits, completionPercent } from '../utils';
+import { timeAgo, formatDate, totalUnits, completionPercent, formatPriority } from '../utils';
 import { showToast } from '../components/toast';
 import { showModal, hideModal } from '../components/modal';
 
@@ -95,7 +95,7 @@ export async function renderOrderDetail(params: Record<string, string>): Promise
   clientBlock.innerHTML = `
     <div class="flex justify-between items-center" style="margin-bottom:8px;">
       <h3>${order.clientName}</h3>
-      <span class="badge badge-priority-${order.priority.toLowerCase() === 'critical' || order.priority.toLowerCase() === 'high' ? 'high' : order.priority.toLowerCase() === 'medium' ? 'medium' : 'low'}">${order.priority}</span>
+      <span class="badge badge-priority-${order.priority.toLowerCase() === 'critical' || order.priority.toLowerCase() === 'high' ? 'high' : order.priority.toLowerCase() === 'medium' ? 'medium' : 'low'}">${formatPriority(order.priority)}</span>
     </div>
     <div class="text-muted text-sm" style="margin-bottom:4px;">
       <span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px;">location_on</span>

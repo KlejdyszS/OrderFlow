@@ -4,7 +4,7 @@
 
 import { getOrders, getStages, getCurrentUser, getOrdersForUser, getStats, getStageColor } from '../data/store';
 import { navigate } from '../router';
-import { timeAgo, formatDate, formatDeadlineClass } from '../utils';
+import { timeAgo, formatDate, formatDeadlineClass, formatPriority } from '../utils';
 
 export async function renderDashboard(): Promise<HTMLElement> {
   const screen = document.createElement('div');
@@ -101,7 +101,7 @@ export async function renderDashboard(): Promise<HTMLElement> {
         <div class="flex-1" style="min-width:0">
           <div class="flex justify-between items-center mb-sm">
             <span style="font-family:var(--font-display);font-weight:600;font-size:14px;" class="truncate">${order.clientName}</span>
-            <span class="${order.priority === 'CRITICAL' || order.priority === 'HIGH' ? 'badge badge-priority-high' : 'text-muted text-xs'}">${order.priority}</span>
+            <span class="${order.priority === 'CRITICAL' || order.priority === 'HIGH' ? 'badge badge-priority-high' : 'text-muted text-xs'}">${formatPriority(order.priority)}</span>
           </div>
           <div class="text-muted text-sm truncate" style="margin-bottom:4px;">
             ${order.variants.map(v => `${v.quantity}x ${v.productName} ${v.color}`).join(' | ')}
