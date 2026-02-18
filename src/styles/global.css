@@ -114,6 +114,7 @@ h4 {
 
 .card:active {
     background: var(--bg-hover);
+    transform: translateY(1px);
 }
 
 .card-interactive {

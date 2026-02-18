@@ -136,6 +136,7 @@ export async function renderOrderDetail(params: Record<string, string>): Promise
           <div class="text-xs text-muted" style="margin-top:2px;">
             ${variant.quantity.toLocaleString()} szt. ${variant.engravingText ? `• "${variant.engravingText}"` : ''}
           </div>
+          ${variant.notes ? `<div class="text-xs" style="margin-top:4px;color:var(--status-blocked);font-weight:600;"><span class="material-icons-round" style="font-size:12px;vertical-align:middle;margin-right:2px;">priority_high</span>UWAGI: ${variant.notes}</div>` : ''}
         </div>
         ${variant.fileData ? `
           <div style="margin-left:auto;text-align:right;">

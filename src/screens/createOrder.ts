@@ -2,7 +2,7 @@ import { getTeam, getInventory, createOrder } from '../data/store';
 import { navigate } from '../router';
 import { showToast } from '../components/toast';
 
-interface VR { productId: string; productName: string; variantId: string; color: string; colorHex: string; quantity: number; engravingText: string; fileName: string; fileData: string; }
+interface VR { productId: string; productName: string; variantId: string; color: string; colorHex: string; quantity: number; engravingText: string; notes: string; fileName: string; fileData: string; }
 
 export async function renderCreateOrder(): Promise<HTMLElement> {
     const screen = document.createElement('div');
@@ -73,7 +73,7 @@ export async function renderCreateOrder(): Promise<HTMLElement> {
         }
         const p = inventory[0];
         const v = p.variants[0];
-        rows.push({
+        const newRow: VR = {
             productId: p.id,
             productName: p.name,
             variantId: v?.id || '',
@@ -81,77 +81,129 @@ export async function renderCreateOrder(): Promise<HTMLElement> {
             colorHex: v?.colorHex || '#999',
             quantity: 100,
             engravingText: '',
+            notes: '',
             fileName: '',
             fileData: ''
+        };
+        rows.push(newRow);
+
+        // Targeted insertion instead of full render
+        const list = screen.querySelector('#v-list')!;
+        const card = createCard(newRow, rows.length - 1);
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(10px)';
+        list.appendChild(card);
+
+        // Trigger animation
+        requestAnimationFrame(() => {
+            card.style.transition = 'all var(--transition-base)';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
         });
-        render();
+
+        updateTotal();
+        screen.querySelector('#v-count')!.textContent = `${rows.length} szt.`;
+    }
+
+    function createCard(r: VR, i: number) {
+        const prod = inventory.find(p => p.id === r.productId);
+        const vars = prod?.variants || [];
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.position = 'relative';
+        card.style.marginBottom = 'var(--space-md)';
+        card.innerHTML = `
+    <button type="button" class="btn-icon rm" style="position:absolute;top:8px;right:8px;width:24px;height:24px;border:none"><span class="material-icons-round" style="font-size:16px;color:var(--text-muted)">close</span></button>
+    <div class="flex gap-md" style="margin-bottom:var(--space-md)">
+      <div class="input-group flex-1" style="margin-bottom:0"><label>Model</label><select class="input p-sel">${inventory.map(p => `<option value="${p.id}" ${p.id === r.productId ? 'selected' : ''}>${p.name}</option>`).join('')}</select></div>
+      <div class="input-group flex-1" style="margin-bottom:0"><label>Kolor</label><select class="input v-sel">${vars.map(v => `<option value="${v.id}" ${v.id === r.variantId ? 'selected' : ''}>${v.color}</option>`).join('')}</select></div>
+    </div>
+    <div class="flex gap-md" style="margin-bottom:var(--space-md)">
+      <div class="input-group flex-1" style="margin-bottom:0"><label>Ilość</label><input type="number" class="input q-in" min="1" value="${r.quantity}"/></div>
+      <div class="input-group flex-1" style="margin-bottom:0"><label>Grawer</label><input type="text" class="input e-in" value="${r.engravingText}" placeholder="Tekst logo"/></div>
+    </div>
+    <div class="input-group" style="margin-bottom:var(--space-md)">
+      <label>Uwagi do produktu</label>
+      <input type="text" class="input n-in" value="${r.notes}" placeholder="np. grawer z dwóch stron, kolor specjalny..." style="border-color:var(--status-blocked)33" />
+    </div>
+    <div class="flex items-center gap-sm mt-md">
+      <input type="file" class="f-in" style="display:none" accept="image/*,.pdf,.svg" />
+      <button type="button" class="btn btn-secondary btn-sm f-btn" style="height:28px;font-size:11px;padding:0 12px;display:flex;align-items:center;gap:4px">
+        <span class="material-icons-round" style="font-size:14px">attach_file</span> 
+        <span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.fileName || 'Załącz logo'}</span>
+      </button>
+      <div class="preview-box">
+          ${r.fileData ? `
+            <div style="width:28px;height:28px;border-radius:4px;overflow:hidden;border:1px solid var(--color-acid);background:white">
+              ${r.fileData.startsWith('data:image/')
+                    ? `<img src="${r.fileData}" style="width:100%;height:100%;object-fit:contain" />`
+                    : `<span class="material-icons-round text-acid" style="font-size:18px;display:block;text-align:center;line-height:28px">check_circle</span>`}
+            </div>
+          ` : ''}
+      </div>
+    </div>`;
+
+        card.querySelector('.rm')!.addEventListener('click', () => {
+            card.style.transition = 'all var(--transition-base)';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                rows.splice(i, 1);
+                render();
+            }, 200);
+        });
+
+        card.querySelector('.p-sel')!.addEventListener('change', (e) => {
+            const pid = (e.target as HTMLSelectElement).value;
+            const np = inventory.find(p => p.id === pid)!;
+            r.productId = pid; r.productName = np.name;
+            r.variantId = np.variants[0]?.id || ''; r.color = np.variants[0]?.color || ''; r.colorHex = np.variants[0]?.colorHex || '#999';
+            render(); // Still need render for color dropdown update
+        });
+
+        card.querySelector('.v-sel')!.addEventListener('change', (e) => {
+            const vid = (e.target as HTMLSelectElement).value;
+            const nv = vars.find(v => v.id === vid);
+            r.variantId = vid; r.color = nv?.color || ''; r.colorHex = nv?.colorHex || '#999';
+        });
+
+        card.querySelector('.q-in')!.addEventListener('input', (e) => { r.quantity = parseInt((e.target as HTMLInputElement).value) || 0; updateTotal(); });
+        card.querySelector('.e-in')!.addEventListener('input', (e) => { r.engravingText = (e.target as HTMLInputElement).value; });
+        card.querySelector('.n-in')!.addEventListener('input', (e) => { r.notes = (e.target as HTMLInputElement).value; });
+
+        const fIn = card.querySelector('.f-in') as HTMLInputElement;
+        const fBtn = card.querySelector('.f-btn') as HTMLElement;
+        const previewBox = card.querySelector('.preview-box') as HTMLElement;
+
+        fBtn.addEventListener('click', () => fIn.click());
+        fIn.addEventListener('change', async () => {
+            const file = fIn.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = e.target?.result as string;
+                r.fileName = file.name;
+                r.fileData = data;
+                fBtn.querySelector('span:last-child')!.textContent = file.name;
+                previewBox.innerHTML = `
+                    <div style="width:28px;height:28px;border-radius:4px;overflow:hidden;border:1px solid var(--color-acid);background:white">
+                      ${data.startsWith('data:image/')
+                        ? `<img src="${data}" style="width:100%;height:100%;object-fit:contain" />`
+                        : `<span class="material-icons-round text-acid" style="font-size:18px;display:block;text-align:center;line-height:28px">check_circle</span>`}
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        return card;
     }
 
     function render() {
         const list = screen.querySelector('#v-list')!;
         list.innerHTML = '';
         rows.forEach((r, i) => {
-            const prod = inventory.find(p => p.id === r.productId);
-            const vars = prod?.variants || [];
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.style.position = 'relative';
-            card.innerHTML = `
-        <button type="button" class="btn-icon rm" style="position:absolute;top:8px;right:8px;width:24px;height:24px;border:none"><span class="material-icons-round" style="font-size:16px;color:var(--text-muted)">close</span></button>
-        <div class="flex gap-md" style="margin-bottom:var(--space-md)">
-          <div class="input-group flex-1" style="margin-bottom:0"><label>Model</label><select class="input p-sel">${inventory.map(p => `<option value="${p.id}" ${p.id === r.productId ? 'selected' : ''}>${p.name}</option>`).join('')}</select></div>
-          <div class="input-group flex-1" style="margin-bottom:0"><label>Kolor</label><select class="input v-sel">${vars.map(v => `<option value="${v.id}" ${v.id === r.variantId ? 'selected' : ''}>${v.color}</option>`).join('')}</select></div>
-        </div>
-        <div class="flex gap-md">
-          <div class="input-group flex-1" style="margin-bottom:0"><label>Ilość</label><input type="number" class="input q-in" min="1" value="${r.quantity}"/></div>
-          <div class="input-group flex-1" style="margin-bottom:0"><label>Grawer</label><input type="text" class="input e-in" value="${r.engravingText}" placeholder="Tekst logo"/></div>
-        </div>
-        <div class="flex items-center gap-sm mt-md">
-          <input type="file" class="f-in" style="display:none" accept="image/*,.pdf,.svg" />
-          <button type="button" class="btn btn-secondary btn-sm f-btn" style="height:28px;font-size:11px;padding:0 12px;display:flex;align-items:center;gap:4px">
-            <span class="material-icons-round" style="font-size:14px">attach_file</span> 
-            <span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.fileName || 'Załącz logo'}</span>
-          </button>
-          ${r.fileData ? `
-            <div style="width:28px;height:28px;border-radius:4px;overflow:hidden;border:1px solid var(--color-acid);background:white">
-              ${r.fileData.startsWith('data:image/')
-                        ? `<img src="${r.fileData}" style="width:100%;height:100%;object-fit:contain" />`
-                        : `<span class="material-icons-round text-acid" style="font-size:18px;display:block;text-align:center;line-height:28px">check_circle</span>`}
-            </div>
-          ` : ''}
-        </div>`;
-            card.querySelector('.rm')!.addEventListener('click', () => { rows.splice(i, 1); render(); });
-            card.querySelector('.p-sel')!.addEventListener('change', (e) => {
-                const pid = (e.target as HTMLSelectElement).value;
-                const np = inventory.find(p => p.id === pid)!;
-                r.productId = pid; r.productName = np.name;
-                r.variantId = np.variants[0]?.id || ''; r.color = np.variants[0]?.color || ''; r.colorHex = np.variants[0]?.colorHex || '#999';
-                render();
-            });
-            card.querySelector('.v-sel')!.addEventListener('change', (e) => {
-                const vid = (e.target as HTMLSelectElement).value;
-                const nv = vars.find(v => v.id === vid);
-                r.variantId = vid; r.color = nv?.color || ''; r.colorHex = nv?.colorHex || '#999';
-            });
-            card.querySelector('.q-in')!.addEventListener('input', (e) => { r.quantity = parseInt((e.target as HTMLInputElement).value) || 0; updateTotal(); });
-            card.querySelector('.e-in')!.addEventListener('input', (e) => { r.engravingText = (e.target as HTMLInputElement).value; });
-
-            const fIn = card.querySelector('.f-in') as HTMLInputElement;
-            const fBtn = card.querySelector('.f-btn') as HTMLElement;
-            fBtn.addEventListener('click', () => fIn.click());
-            fIn.addEventListener('change', async () => {
-                const file = fIn.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    r.fileName = file.name;
-                    r.fileData = e.target?.result as string;
-                    render();
-                };
-                reader.readAsDataURL(file);
-            });
-
-            list.appendChild(card);
+            list.appendChild(createCard(r, i));
         });
         updateTotal();
         screen.querySelector('#v-count')!.textContent = `${rows.length} szt.`;
@@ -159,7 +211,8 @@ export async function renderCreateOrder(): Promise<HTMLElement> {
 
     function updateTotal() {
         const t = rows.reduce((s, r) => s + (r.quantity || 0), 0);
-        screen.querySelector('#total-box')!.innerHTML = `<div class="label">Suma sztuk</div><div class="data-lg text-acid">${t.toLocaleString()}</div>`;
+        const totalBox = screen.querySelector('#total-box');
+        if (totalBox) totalBox.innerHTML = `<div class="label">Suma sztuk</div><div class="data-lg text-acid">${t.toLocaleString()}</div>`;
     }
 
     async function submit() {

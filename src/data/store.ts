@@ -137,6 +137,7 @@ function mapVariant(data: any): OrderVariant {
         quantity: data.quantity,
         completed: data.completed,
         engravingText: data.engraving_text,
+        notes: data.notes,
         fileName: data.file_name,
         fileData: data.file_data
     };
@@ -322,6 +323,7 @@ export async function createOrder(data: {
             color_hex: v.colorHex,
             quantity: v.quantity,
             engraving_text: v.engravingText,
+            notes: (v as any).notes,
             file_name: (v as any).fileName,
             file_data: (v as any).fileData
         })));

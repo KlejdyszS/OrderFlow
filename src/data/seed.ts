@@ -43,6 +43,7 @@ export interface OrderVariant {
     quantity: number;
     completed: boolean;
     engravingText?: string;
+    notes?: string;
     fileName?: string;
     fileData?: string; // base64
 }
