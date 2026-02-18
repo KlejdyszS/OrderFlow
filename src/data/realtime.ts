@@ -8,6 +8,16 @@ import { refreshCurrentScreen, getActiveRoute } from '../router';
 import { showToast } from '../components/toast';
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let suppressUntil = 0;
+
+/**
+ * Temporarily suppress realtime refreshes for the specified duration (ms).
+ * Useful when we perform a local optimistic update and don't want the 
+ * immediate DB change event to trigger a redundant re-render.
+ */
+export function suppressRefresh(duration = 1000) {
+    suppressUntil = Date.now() + duration;
+}
 
 /**
  * Debounced screen refresh — batches rapid DB changes (e.g. multiple variants updated)
@@ -20,12 +30,20 @@ function handleChange(table: string) {
     // Don't refresh if user is filling out the create form
     if (activeRoute === 'create') return;
 
+    // Skip if suppression is active (local update just happened)
+    if (Date.now() < suppressUntil) {
+        console.log(`[Realtime] Suppression active — skipping refresh for "${table}"`);
+        return;
+    }
+
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
         console.log(`[Realtime] Change on "${table}" — refreshing screen`);
-        showToast('Dane zaktualizowane', 'info');
+        // We only show toast if it's likely a remote change (not our own)
+        // Adjust threshold if needed
         refreshCurrentScreen();
-    }, 300);
+        showToast('Dane zaktualizowane', 'info');
+    }, 600); // 600ms debounce to allow more complex transactions to finish
 }
 
 /**

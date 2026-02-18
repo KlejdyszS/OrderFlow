@@ -4,6 +4,7 @@
 
 import { supabase } from '../supabase';
 import type { Order, PipelineStage, TeamMember, InventoryItem, CustomField, OrderVariant, OrderLog, InventoryVariant } from './seed';
+import { suppressRefresh } from './realtime';
 
 // ── Init (No longer needed to load everything upfront, but can be used for session check) ──
 export async function initStore(): Promise<void> {
@@ -112,7 +113,8 @@ export async function getInventory(): Promise<InventoryItem[]> {
     const { data, error } = await supabase
         .from('inventory')
         .select('*, variants:inventory_variants(*)')
-        .order('name', { ascending: true });
+        .order('name', { ascending: true })
+        .order('sort_order', { ascending: true, referencedTable: 'inventory_variants' });
     if (error) throw error;
     return (data || []).map(item => ({
         ...item,
@@ -323,6 +325,7 @@ export async function createOrder(data: {
     assignedTo: string;
     variants: Omit<OrderVariant, 'id' | 'completed'>[];
 }): Promise<Order> {
+    suppressRefresh();
     const orderNumber = await generateOrderNumber();
     const stages = await getStages();
 
@@ -364,6 +367,7 @@ export async function createOrder(data: {
 }
 
 export async function updateOrder(id: string, updates: Partial<Order>): Promise<void> {
+    suppressRefresh();
     const snakeUpdates = mapOrderToSnake(updates);
     const { error } = await supabase
         .from('orders')
@@ -401,6 +405,7 @@ export async function advanceOrderStatus(id: string): Promise<PipelineStage | un
 }
 
 export async function moveOrderToStage(orderId: string, stageId: string): Promise<void> {
+    suppressRefresh();
     const stage = await getStage(stageId);
     if (!stage) return;
 
@@ -418,6 +423,7 @@ export async function moveOrderToStage(orderId: string, stageId: string): Promis
 }
 
 export async function toggleVariantComplete(orderId: string, variantId: string): Promise<void> {
+    suppressRefresh();
     const order = await getOrder(orderId);
     if (!order) return;
     const variant = order.variants.find(v => v.id === variantId);
@@ -570,6 +576,24 @@ export async function importInventory(data: any[]): Promise<void> {
 export async function removeInventoryVariant(id: string): Promise<void> {
     const { error } = await supabase.from('inventory_variants').delete().eq('id', id);
     if (error) throw error;
+}
+
+export async function updateInventoryVariant(id: string, updates: Partial<Omit<InventoryVariant, 'id'>>): Promise<void> {
+    const snakeUpdates: any = {};
+    if (updates.color !== undefined) snakeUpdates.color = updates.color;
+    if (updates.colorHex !== undefined) snakeUpdates.color_hex = updates.colorHex;
+    if (updates.tipSize !== undefined) snakeUpdates.tip_size = updates.tipSize;
+    if (updates.sku !== undefined) snakeUpdates.sku = updates.sku;
+    if ((updates as any).sortOrder !== undefined) snakeUpdates.sort_order = (updates as any).sortOrder;
+    const { error } = await supabase.from('inventory_variants').update(snakeUpdates).eq('id', id);
+    if (error) throw error;
+}
+
+export async function reorderInventoryVariants(variants: { id: string; sortOrder: number }[]): Promise<void> {
+    for (const v of variants) {
+        const { error } = await supabase.from('inventory_variants').update({ sort_order: v.sortOrder }).eq('id', v.id);
+        if (error) throw error;
+    }
 }
 
 export async function addCustomField(data: Omit<CustomField, 'id'>): Promise<CustomField> {

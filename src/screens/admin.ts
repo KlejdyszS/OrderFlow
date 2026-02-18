@@ -4,7 +4,7 @@
 
 import {
   getTeam, addTeamMember, updateTeamMember, removeTeamMember,
-  getInventory, addInventoryItem, removeInventoryItem, addInventoryVariant, removeInventoryVariant,
+  getInventory, addInventoryItem, removeInventoryItem, addInventoryVariant, removeInventoryVariant, updateInventoryVariant, reorderInventoryVariants,
   getStages, addStage, updateStage, removeStage,
   getCustomFields, addCustomField, removeCustomField,
   getCurrentUser, setCurrentUser,
@@ -266,26 +266,83 @@ async function renderInventorySection(screen: HTMLElement) {
 }
 
 function showProductVariantsModal(item: Awaited<ReturnType<typeof getInventory>>[0], screen: HTMLElement) {
+  // Make a mutable copy of variants for reordering
+  const variants = [...item.variants];
+
   const content = document.createElement('div');
-  content.style.maxWidth = '400px';
+  content.style.maxWidth = '440px';
+
+  function renderVariantList() {
+    const vList = content.querySelector('#v-list') as HTMLElement;
+    if (!vList) return;
+    vList.innerHTML = '';
+
+    if (variants.length === 0) {
+      vList.innerHTML = '<div class="text-center text-muted text-sm" style="padding:var(--space-lg)">Brak wariantów</div>';
+      return;
+    }
+
+    variants.forEach((v, idx) => {
+      const row = document.createElement('div');
+      row.className = 'card';
+      row.style.cssText = 'padding:var(--space-sm) var(--space-md);background:var(--bg-input);margin-bottom:var(--space-sm);';
+      row.innerHTML = `
+        <div class="flex items-center gap-sm" style="margin-bottom:var(--space-sm)">
+          <input type="color" class="ev-hex" value="${v.colorHex}" style="width:28px;height:28px;border:none;padding:0;cursor:pointer;border-radius:50%;flex-shrink:0" />
+          <input type="text" class="input ev-color" value="${v.color}" placeholder="Nazwa koloru" style="flex:1;font-size:12px;padding:4px 8px;height:28px" />
+          <div class="flex gap-xs" style="flex-shrink:0">
+            <button class="btn-icon mv-up" style="width:24px;height:24px;border:none;${idx === 0 ? 'opacity:0.2;pointer-events:none' : ''}" title="W górę"><span class="material-icons-round" style="font-size:16px">arrow_upward</span></button>
+            <button class="btn-icon mv-down" style="width:24px;height:24px;border:none;${idx === variants.length - 1 ? 'opacity:0.2;pointer-events:none' : ''}" title="W dół"><span class="material-icons-round" style="font-size:16px">arrow_downward</span></button>
+            <button class="btn-icon del-v" style="width:24px;height:24px;border:none" title="Usuń"><span class="material-icons-round" style="font-size:16px;color:var(--status-blocked)">close</span></button>
+          </div>
+        </div>
+        <div class="flex gap-sm">
+          <input type="text" class="input ev-sku" value="${v.sku || ''}" placeholder="SKU" style="flex:1;font-size:11px;padding:4px 8px;height:26px" />
+          <input type="text" class="input ev-tip" value="${v.tipSize || ''}" placeholder="Rozmiar" style="flex:1;font-size:11px;padding:4px 8px;height:26px" />
+        </div>
+      `;
+
+      // Inline edit listeners — update the mutable array
+      row.querySelector('.ev-color')!.addEventListener('input', (e) => { v.color = (e.target as HTMLInputElement).value; });
+      row.querySelector('.ev-hex')!.addEventListener('input', (e) => { v.colorHex = (e.target as HTMLInputElement).value; });
+      row.querySelector('.ev-sku')!.addEventListener('input', (e) => { v.sku = (e.target as HTMLInputElement).value; });
+      row.querySelector('.ev-tip')!.addEventListener('input', (e) => { v.tipSize = (e.target as HTMLInputElement).value; });
+
+      // Move up
+      row.querySelector('.mv-up')!.addEventListener('click', () => {
+        if (idx === 0) return;
+        [variants[idx - 1], variants[idx]] = [variants[idx], variants[idx - 1]];
+        renderVariantList();
+      });
+
+      // Move down
+      row.querySelector('.mv-down')!.addEventListener('click', () => {
+        if (idx === variants.length - 1) return;
+        [variants[idx], variants[idx + 1]] = [variants[idx + 1], variants[idx]];
+        renderVariantList();
+      });
+
+      // Delete
+      row.querySelector('.del-v')!.addEventListener('click', async () => {
+        try {
+          await removeInventoryVariant(v.id);
+          variants.splice(idx, 1);
+          renderVariantList();
+          showToast('Wariant usunięty', 'info');
+        } catch (e) {
+          console.error(e);
+          showToast('Błąd usuwania wariantu', 'error');
+        }
+      });
+
+      vList.appendChild(row);
+    });
+  }
+
   content.innerHTML = `
     <h3 style="margin-bottom:var(--space-md)">Warianty: ${item.name}</h3>
-    <div id="v-list" class="flex-col gap-sm mb-lg" style="max-height:300px;overflow-y:auto;padding-right:4px;">
-      ${item.variants.map(v => `
-        <div class="card flex items-center justify-between" style="padding:var(--space-sm) var(--space-md);background:var(--bg-input)">
-          <div class="flex items-center gap-md">
-            <div style="width:16px;height:16px;border-radius:50%;background:${v.colorHex};border:1px solid rgba(255,255,255,0.1)"></div>
-            <div>
-              <div style="font-size:13px;font-weight:600">${v.color}</div>
-              <div class="text-xs text-muted">${v.sku || 'Brak SKU'} • ${v.tipSize || '-'}</div>
-            </div>
-          </div>
-          <button class="btn-icon del-v" data-id="${v.id}" style="width:24px;height:24px;border:none"><span class="material-icons-round" style="font-size:16px;color:var(--status-blocked)">close</span></button>
-        </div>
-      `).join('')}
-      ${item.variants.length === 0 ? '<div class="text-center text-muted text-sm py-md">Brak wariantów</div>' : ''}
-    </div>
-    
+    <div id="v-list" style="max-height:350px;overflow-y:auto;padding-right:4px;margin-bottom:var(--space-md)"></div>
+    <button class="btn btn-primary btn-full mb-lg" id="save-variants"><span class="material-icons-round" style="font-size:16px">save</span> Zapisz zmiany</button>
     <div class="divider"></div>
     <h4 style="margin-bottom:var(--space-sm)">Dodaj nowy wariant</h4>
     <div class="grid col-2 gap-sm mb-md">
@@ -296,24 +353,31 @@ function showProductVariantsModal(item: Awaited<ReturnType<typeof getInventory>>
       <div class="input-group" style="margin-bottom:0"><label>SKU</label><input type="text" class="input" id="nv-sku" placeholder="PRO-SLV" /></div>
       <div class="input-group" style="margin-bottom:0"><label>Rozmiar/Tip</label><input type="text" class="input" id="nv-tip" placeholder="0.7mm" /></div>
     </div>
-    <button class="btn btn-primary btn-full" id="nv-add">Dodaj wariant</button>
+    <button class="btn btn-secondary btn-full" id="nv-add"><span class="material-icons-round" style="font-size:16px">add</span> Dodaj wariant</button>
   `;
 
   showModal(content);
+  renderVariantList();
 
-  content.querySelectorAll('.del-v').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const vid = btn.getAttribute('data-id')!;
-      await removeInventoryVariant(vid);
-      showToast('Wariant usunięty', 'info');
+  // Save all edits + reorder
+  content.querySelector('#save-variants')!.addEventListener('click', async () => {
+    try {
+      // Save each variant's field edits + sort order
+      for (let i = 0; i < variants.length; i++) {
+        const v = variants[i];
+        await updateInventoryVariant(v.id, { color: v.color, colorHex: v.colorHex, sku: v.sku, tipSize: v.tipSize });
+        await reorderInventoryVariants([{ id: v.id, sortOrder: i }]);
+      }
+      showToast('Warianty zapisane', 'success');
       hideModal();
-      const freshInv = await getInventory();
-      const freshItem = freshInv.find(i => i.id === item.id)!;
-      showProductVariantsModal(freshItem, screen);
       await refreshAdmin(screen);
-    });
+    } catch (e) {
+      console.error(e);
+      showToast('Błąd zapisywania wariantów', 'error');
+    }
   });
 
+  // Add new variant
   content.querySelector('#nv-add')!.addEventListener('click', async () => {
     const color = (content.querySelector('#nv-name') as HTMLInputElement).value.trim();
     const colorHex = (content.querySelector('#nv-hex') as HTMLInputElement).value;
@@ -323,13 +387,14 @@ function showProductVariantsModal(item: Awaited<ReturnType<typeof getInventory>>
     if (!color) { showToast('Nazwa koloru jest wymagana', 'error'); return; }
 
     try {
-      await addInventoryVariant(item.id, { color, colorHex, sku, tipSize });
+      const newVariant = await addInventoryVariant(item.id, { color, colorHex, sku, tipSize });
+      variants.push(newVariant);
+      renderVariantList();
+      // Clear inputs
+      (content.querySelector('#nv-name') as HTMLInputElement).value = '';
+      (content.querySelector('#nv-sku') as HTMLInputElement).value = '';
+      (content.querySelector('#nv-tip') as HTMLInputElement).value = '';
       showToast('Wariant dodany', 'success');
-      hideModal();
-      const freshInv = await getInventory();
-      const freshItem = freshInv.find(i => i.id === item.id)!;
-      showProductVariantsModal(freshItem, screen);
-      await refreshAdmin(screen);
     } catch (e) {
       console.error(e);
       showToast('Błąd dodawania wariantu', 'error');
