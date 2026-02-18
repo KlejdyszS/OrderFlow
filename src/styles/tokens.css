@@ -63,3 +63,28 @@
   --header-height: 56px;
   --max-width: 100%;
 }
+
+/* ── Light Mode Override ── */
+[data-theme="light"] {
+  /* ── Backgrounds ── */
+  --bg-main: #F4F4F5;
+  --bg-card: #FFFFFF;
+  --bg-input: #E4E4E7;
+  --bg-hover: #F1F5F9;
+
+  /* ── Text ── */
+  --text-primary: #09090B;
+  --text-secondary: #71717A;
+  --text-muted: #A1A1AA;
+
+  /* ── Borders ── */
+  --border-color: #E2E8F0;
+  --border-std: 1px solid #E2E8F0;
+
+  /* ── Shadows ── */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-modal: 0 10px 40px rgba(0, 0, 0, 0.1);
+
+  /* Brand override (optional, keep acid but maybe tweak contrast) */
+  --color-acid-dim: rgba(212, 255, 0, 0.3);
+}

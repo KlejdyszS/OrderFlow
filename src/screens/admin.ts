@@ -7,7 +7,7 @@ import {
   getInventory, addInventoryItem, removeInventoryItem, addInventoryVariant, removeInventoryVariant,
   getStages, addStage, updateStage, removeStage,
   getCustomFields, addCustomField, removeCustomField,
-  getCurrentUser, setCurrentUser, exportOrdersCSV, resetData,
+  getCurrentUser, setCurrentUser,
   importInventory
 } from '../data/store';
 import type { PipelineStage } from '../data/seed';
@@ -448,12 +448,59 @@ async function renderFieldsSection(screen: HTMLElement) {
 async function renderActionsSection(screen: HTMLElement) {
   const section = document.createElement('div');
   section.className = 'mb-xl';
-  section.innerHTML = `<div class="section-header"><h4>Dane i Eksport</h4></div>`;
+
+  const header = document.createElement('div');
+  header.className = 'section-header';
+  header.innerHTML = `<h4>Ustawienia aplikacji</h4>`;
+  section.appendChild(header);
+
+  const themeCard = document.createElement('div');
+  themeCard.className = 'card flex items-center justify-between';
+  themeCard.style.padding = 'var(--space-md) var(--space-lg)';
+
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+
+  themeCard.innerHTML = `
+    <div class="flex items-center gap-md">
+      <span class="material-icons-round" style="color:var(--text-muted)">contrast</span>
+      <div>
+        <div style="font-size:13px;">Tryb kolorów</div>
+        <div class="text-xs text-muted">Zmień wygląd aplikacji</div>
+      </div>
+    </div>
+    <button class="btn btn-secondary" id="theme-toggle" style="min-width:100px;">
+      ${currentTheme === 'light' ? 'Tryb Ciemny' : 'Tryb Jasny'}
+    </button>
+  `;
+
+  themeCard.querySelector('#theme-toggle')!.addEventListener('click', () => {
+    const active = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = active === 'light' ? 'dark' : 'light';
+
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('orderflow_theme', next);
+
+    // Refresh UI button
+    const btn = themeCard.querySelector('#theme-toggle')!;
+    btn.textContent = next === 'light' ? 'Tryb Ciemny' : 'Tryb Jasny';
+    showToast(`Tryb ${next === 'light' ? 'jasny' : 'ciemny'} aktywowany`, 'info');
+  });
+
+  section.appendChild(themeCard);
+
+  // ── Data and Export Section ──
+  const exportHeader = document.createElement('div');
+  exportHeader.className = 'section-header';
+  exportHeader.innerHTML = `<h4>Dane i Eksport</h4>`;
+  section.appendChild(exportHeader);
 
   const exportBtn = document.createElement('button');
   exportBtn.className = 'btn btn-secondary btn-full mb-md';
   exportBtn.innerHTML = '<span class="material-icons-round" style="font-size:18px">download</span> Eksportuj zamówienia (CSV)';
   exportBtn.addEventListener('click', async () => {
+    // Note: These functions like exportOrdersCSV need to be imported or available
+    // Assuming they are available in the scope or imported at the top
+    const { exportOrdersCSV } = await import('../data/store');
     const csv = await exportOrdersCSV();
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -480,6 +527,7 @@ async function renderActionsSection(screen: HTMLElement) {
     showModal(content);
     content.querySelector('#cancel-reset')!.addEventListener('click', hideModal);
     content.querySelector('#confirm-reset')!.addEventListener('click', async () => {
+      const { resetData } = await import('../data/store');
       await resetData(); hideModal();
       showToast('Dane zresetowane', 'success'); await refreshAdmin(screen);
     });

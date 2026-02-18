@@ -14,6 +14,10 @@ import { renderOrderDetail } from './screens/orderDetail';
 import { renderCreateOrder } from './screens/createOrder'; // Screen confirmed valid by tsc
 import { renderAdmin } from './screens/admin';
 
+// ── Theme Initialization ──
+const savedTheme = localStorage.getItem('orderflow_theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+
 // ── Initialize ──
 initStore();
 
