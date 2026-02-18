@@ -17,7 +17,8 @@
   /* ── Status Colors ── */
   --status-new: #3B82F6;
   --status-production: #F59E0B;
-  --status-done: #10B981;
+  --status-done: #3ecf8e;
+  /* User requested: hsl(153.1deg 60.2% 52.7%) */
   --status-blocked: #EF4444;
   --status-shipped: #8B5CF6;
 
@@ -74,8 +75,10 @@
 
   /* ── Text ── */
   --text-primary: #09090B;
-  --text-secondary: #71717A;
-  --text-muted: #A1A1AA;
+  --text-secondary: #52525B;
+  /* Increased contrast from #71717A */
+  --text-muted: #71717A;
+  /* Increased contrast from #A1A1AA */
 
   /* ── Borders ── */
   --border-color: #E2E8F0;
@@ -87,4 +90,12 @@
 
   /* Brand override (optional, keep acid but maybe tweak contrast) */
   --color-acid-dim: rgba(212, 255, 0, 0.3);
+
+  /* ── Status Overrides for Light Mode (Darker for contrast) ── */
+  --status-production: #D97706;
+  /* Darker orange */
+  --status-done: #059669;
+  /* Darker green for white bg */
+  --status-blocked: #DC2626;
+  /* Darker red */
 }

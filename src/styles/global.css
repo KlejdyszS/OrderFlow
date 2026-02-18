@@ -272,7 +272,7 @@ textarea.input {
 }
 
 .badge-done {
-    background: rgba(16, 185, 129, 0.2);
+    background: rgba(62, 207, 142, 0.2);
     color: var(--status-done);
 }
 
@@ -302,7 +302,7 @@ textarea.input {
 }
 
 .badge-priority-low {
-    background: rgba(16, 185, 129, 0.15);
+    background: rgba(62, 207, 142, 0.15);
     color: var(--status-done);
 }
 
