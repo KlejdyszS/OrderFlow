@@ -43,7 +43,15 @@ To make the app available to other devices in your local network (e.g., tablets 
 
 ---
 
+## 📎 File Handling
+- **Upload**: All file types are accepted when attaching files to order variants (logos, PDFs, vectors, etc.)
+- **Storage**: Files are uploaded to **Supabase Storage** (`order-attachments` bucket). Legacy base64 data is still supported for backward compatibility.
+- **Download**: Files are force-downloaded as attachments via blob fetch, ensuring cross-origin Supabase URLs work correctly.
+
+---
+
 ## 🛠 Tech Stack
 - **Frontend**: Vite + TypeScript + Vanilla CSS
 - **Database**: Supabase (Postgres)
+- **Storage**: Supabase Storage (file attachments)
 - **Deployment**: Local network exposure + GitHub Backup

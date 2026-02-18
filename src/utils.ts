@@ -111,3 +111,37 @@ export function formatPriority(priority: string): string {
     };
     return map[priority.toUpperCase()] || priority;
 }
+
+export async function triggerDownload(url: string, fileName: string) {
+    if (url.startsWith('data:')) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+    }
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+    } catch (e) {
+        console.error('Download failed:', e);
+        // Fallback: open in new tab
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.download = fileName;
+        link.click();
+    }
+}

@@ -139,7 +139,7 @@ export async function renderCreateOrder(): Promise<HTMLElement> {
       <input type="text" class="input n-in" value="${r.notes}" placeholder="np. grawer z dwóch stron, kolor specjalny..." style="border-color:var(--status-blocked)33" />
     </div>
     <div class="flex items-center gap-sm mt-md">
-      <input type="file" class="f-in" style="display:none" accept="image/*,.pdf,.svg" />
+      <input type="file" class="f-in" accept="*/*" style="display:none" />
       <button type="button" class="btn btn-secondary btn-sm f-btn" style="height:28px;font-size:11px;padding:0 12px;display:flex;align-items:center;gap:4px">
         <span class="material-icons-round" style="font-size:14px">attach_file</span> 
         <span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.fileName || 'Załącz logo'}</span>

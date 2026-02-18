@@ -4,7 +4,7 @@
 
 import { getOrder, getStageColor, getStageName, getNextStage, advanceOrderStatus, toggleVariantComplete, addOrderLog, deleteOrder, getFileUrl } from '../data/store';
 import { navigate } from '../router';
-import { timeAgo, formatDate, totalUnits, completionPercent, formatPriority } from '../utils';
+import { timeAgo, formatDate, totalUnits, completionPercent, formatPriority, triggerDownload } from '../utils';
 import { showToast } from '../components/toast';
 import { showModal, hideModal } from '../components/modal';
 
@@ -142,11 +142,11 @@ export async function renderOrderDetail(params: Record<string, string>): Promise
         </div>
         ${variant.fileData ? `
           <div style="margin-left:auto;text-align:right;">
-             <a href="${fileUrl}" download="${variant.fileName}" title="${variant.fileName}" style="display:block;width:64px;height:64px;padding:4px;border:1px solid var(--border-color);border-radius:8px;background:white;box-shadow:var(--shadow-sm)">
+             <button class="file-download-btn" data-file-url="${fileUrl}" data-file-name="${variant.fileName}" title="${variant.fileName}" style="display:block;width:64px;height:64px;padding:4px;border:1px solid var(--border-color);border-radius:8px;background:white;box-shadow:var(--shadow-sm);cursor:pointer">
                ${fileUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) || fileUrl.startsWith('data:image/')
           ? `<img src="${fileUrl}" style="width:100%;height:100%;object-fit:contain" />`
-          : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;"><span class="material-icons-round" style="font-size:32px;color:var(--text-muted)">description</span><span style="font-size:8px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;width:100%">PDF/SVG</span></div>`}
-             </a>
+          : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;"><span class="material-icons-round" style="font-size:32px;color:var(--text-muted)">description</span><span style="font-size:8px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;width:100%">${(variant.fileName || '').split('.').pop()?.toUpperCase() || 'FILE'}</span></div>`}
+             </button>
           </div>
         ` : ''}
       </label>
@@ -205,6 +205,18 @@ export async function renderOrderDetail(params: Record<string, string>): Promise
       }
     });
 
+    // Wire up file download button
+    const dlBtn = row.querySelector('.file-download-btn') as HTMLElement | null;
+    if (dlBtn) {
+      dlBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = dlBtn.getAttribute('data-file-url') || '';
+        const name = dlBtn.getAttribute('data-file-name') || 'file';
+        triggerDownload(url, name);
+      });
+    }
+
     manifestList.appendChild(row);
   });
 
@@ -240,10 +252,20 @@ export async function renderOrderDetail(params: Record<string, string>): Promise
           <div class="truncate" style="font-size:13px;font-weight:600;">${v.fileName}</div>
           <div class="text-xs text-muted">${v.productName} – ${v.color}</div>
         </div>
-        <a href="${url}" download="${v.fileName}" class="btn-icon" style="width:32px;height:32px;text-decoration:none">
+        <button class="btn-icon file-list-dl-btn" data-file-url="${url}" data-file-name="${v.fileName}" style="width:32px;height:32px;border:none;cursor:pointer">
           <span class="material-icons-round" style="font-size:20px;color:var(--color-acid)">download</span>
-        </a>
+        </button>
       `;
+      // Wire up download button
+      const dlBtn = fileItem.querySelector('.file-list-dl-btn') as HTMLElement;
+      if (dlBtn) {
+        dlBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const url = dlBtn.getAttribute('data-file-url') || '';
+          const name = dlBtn.getAttribute('data-file-name') || 'file';
+          triggerDownload(url, name);
+        });
+      }
       filesContainer.appendChild(fileItem);
     });
     screen.appendChild(filesContainer);
