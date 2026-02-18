@@ -2,7 +2,7 @@
 //  OrderFlow — Order Detail Screen ("The Job Jacket")
 // ═══════════════════════════════════════════════════════
 
-import { getOrder, getStageColor, getStageName, getNextStage, advanceOrderStatus, toggleVariantComplete, addOrderLog, deleteOrder } from '../data/store';
+import { getOrder, getStageColor, getStageName, getNextStage, advanceOrderStatus, toggleVariantComplete, addOrderLog, deleteOrder, getFileUrl } from '../data/store';
 import { navigate } from '../router';
 import { timeAgo, formatDate, totalUnits, completionPercent, formatPriority } from '../utils';
 import { showToast } from '../components/toast';
@@ -124,6 +124,8 @@ export async function renderOrderDetail(params: Record<string, string>): Promise
     row.className = 'card flex items-center gap-md';
     row.style.padding = 'var(--space-md) var(--space-lg)';
 
+    const fileUrl = variant.fileData ? getFileUrl(variant.fileData) : '';
+
     row.innerHTML = `
       <label class="checkbox-custom" style="flex:1;min-width:0;">
         <input type="checkbox" data-variant-id="${variant.id}" ${variant.completed ? 'checked' : ''} />
@@ -140,9 +142,9 @@ export async function renderOrderDetail(params: Record<string, string>): Promise
         </div>
         ${variant.fileData ? `
           <div style="margin-left:auto;text-align:right;">
-             <a href="${variant.fileData}" download="${variant.fileName}" title="${variant.fileName}" style="display:block;width:64px;height:64px;padding:4px;border:1px solid var(--border-color);border-radius:8px;background:white;box-shadow:var(--shadow-sm)">
-               ${variant.fileData.startsWith('data:image/')
-          ? `<img src="${variant.fileData}" style="width:100%;height:100%;object-fit:contain" />`
+             <a href="${fileUrl}" download="${variant.fileName}" title="${variant.fileName}" style="display:block;width:64px;height:64px;padding:4px;border:1px solid var(--border-color);border-radius:8px;background:white;box-shadow:var(--shadow-sm)">
+               ${fileUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) || fileUrl.startsWith('data:image/')
+          ? `<img src="${fileUrl}" style="width:100%;height:100%;object-fit:contain" />`
           : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;"><span class="material-icons-round" style="font-size:32px;color:var(--text-muted)">description</span><span style="font-size:8px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;width:100%">PDF/SVG</span></div>`}
              </a>
           </div>
@@ -225,19 +227,20 @@ export async function renderOrderDetail(params: Record<string, string>): Promise
       fileItem.className = 'card flex items-center gap-md';
       fileItem.style.padding = 'var(--space-md) var(--space-lg)';
 
-      const isImage = v.fileData!.startsWith('data:image/');
+      const url = getFileUrl(v.fileData!);
+      const isImage = url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) || url.startsWith('data:image/');
 
       fileItem.innerHTML = `
         <div style="width:40px;height:40px;border-radius:4px;overflow:hidden;border:1px solid var(--border-color);background:white;flex-shrink:0">
           ${isImage
-          ? `<img src="${v.fileData}" style="width:100%;height:100%;object-fit:contain" />`
+          ? `<img src="${url}" style="width:100%;height:100%;object-fit:contain" />`
           : `<div style="display:flex;align-items:center;justify-content:center;height:100%;background:var(--bg-secondary)"><span class="material-icons-round" style="font-size:20px;color:var(--text-muted)">description</span></div>`}
         </div>
         <div class="flex-1" style="min-width:0;">
           <div class="truncate" style="font-size:13px;font-weight:600;">${v.fileName}</div>
           <div class="text-xs text-muted">${v.productName} – ${v.color}</div>
         </div>
-        <a href="${v.fileData}" download="${v.fileName}" class="btn-icon" style="width:32px;height:32px;text-decoration:none">
+        <a href="${url}" download="${v.fileName}" class="btn-icon" style="width:32px;height:32px;text-decoration:none">
           <span class="material-icons-round" style="font-size:20px;color:var(--color-acid)">download</span>
         </a>
       `;

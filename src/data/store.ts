@@ -139,8 +139,37 @@ function mapVariant(data: any): OrderVariant {
         engravingText: data.engraving_text,
         notes: data.notes,
         fileName: data.file_name,
-        fileData: data.file_data
+        fileData: data.file_data // This remains for backward compatibility and as the storage for URLs
     };
+}
+
+/**
+ * Resolves the URL for a file. If it's base64, returns as is.
+ * If it's a path, returns the Supabase storage public URL.
+ */
+export function getFileUrl(fileData: string): string {
+    if (!fileData) return '';
+    if (fileData.startsWith('data:')) return fileData;
+
+    // Assume it's a storage path (e.g., 'order-attachments/filename.png')
+    const { data } = supabase.storage.from('order-attachments').getPublicUrl(fileData);
+    return data.publicUrl;
+}
+
+/**
+ * Uploads a file to Supabase Storage and returns its path.
+ */
+export async function uploadOrderFile(file: File): Promise<string> {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error } = await supabase.storage
+        .from('order-attachments')
+        .upload(filePath, file);
+
+    if (error) throw error;
+    return filePath;
 }
 
 export async function getCustomFields(): Promise<CustomField[]> {
