@@ -536,9 +536,9 @@ textarea.input {
 }
 
 .pill .color-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
     flex-shrink: 0;
 }
 

@@ -32,8 +32,16 @@ export async function renderPipeline(): Promise<HTMLElement> {
     height: calc(100dvh - var(--nav-height) - 70px);
   `;
 
-  // Horizontal scroll with mouse wheel
+  // Horizontal scroll with mouse wheel (only on background or with Shift)
   scrollContainer.addEventListener('wheel', (e) => {
+    const target = e.target as HTMLElement;
+    const isOverColumn = target.closest('.column-cards');
+
+    // If scrolling over a column, let it handle vertical scroll unless Shift is held
+    if (isOverColumn && !e.shiftKey) {
+      return;
+    }
+
     if (e.deltaY !== 0) {
       e.preventDefault();
       scrollContainer.scrollLeft += e.deltaY;
@@ -51,6 +59,7 @@ export async function renderPipeline(): Promise<HTMLElement> {
       flex-direction: column;
       border-radius: var(--radius-sm);
       overflow: hidden;
+      height: 100%;
     `;
 
     // Column Header
@@ -63,6 +72,7 @@ export async function renderPipeline(): Promise<HTMLElement> {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-shrink: 0;
     `;
     colHeader.innerHTML = `
       <span style="font-family:var(--font-display);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:${stage.color}">${stage.name}</span>
@@ -85,7 +95,6 @@ export async function renderPipeline(): Promise<HTMLElement> {
       border: var(--border-std);
       border-top: none;
       border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-      scrollbar-width: none;
     `;
 
     // Drop zone for drag-and-drop
@@ -186,7 +195,7 @@ export async function renderPipeline(): Promise<HTMLElement> {
         </div>
         <div class="flex flex-wrap gap-xs" style="margin-bottom:8px;">
           ${order.variants.map(v => `
-            <span class="pill">
+            <span class="pill" title="${v.productName} — ${v.color}">
               <span class="color-dot" style="background:${v.colorHex}"></span>
               ${v.productName}: ${v.quantity}
             </span>
