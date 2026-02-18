@@ -75,3 +75,29 @@ export function startRouter(): void {
     resolveRoute().catch(console.error);
 }
 
+/**
+ * Re-render the current screen without changing the URL or scrolling.
+ * Used by Supabase Realtime to refresh the view when remote changes arrive.
+ */
+export function refreshCurrentScreen(): void {
+    const path = getCurrentPath();
+    for (const r of routes) {
+        const match = path.match(r.pattern);
+        if (match) {
+            const params: Record<string, string> = {};
+            r.paramNames.forEach((name, i) => { params[name] = match[i + 1]; });
+
+            const app = document.getElementById('app');
+            if (!app) return;
+
+            const scrollY = window.scrollY;
+            Promise.resolve(r.handler(params)).then(screen => {
+                app.innerHTML = '';
+                app.appendChild(screen);
+                currentScreen = screen;
+                window.scrollTo(0, scrollY); // preserve scroll position
+            }).catch(console.error);
+            return;
+        }
+    }
+}

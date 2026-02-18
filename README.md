@@ -50,6 +50,20 @@ To make the app available to other devices in your local network (e.g., tablets 
 
 ---
 
+## 🔴 Realtime (Live Updates)
+
+OrderFlow uses **Supabase Realtime** to sync changes across multiple PCs instantly — no page refresh needed.
+
+**Setup** (one-time): In your Supabase Dashboard → **Database → Replication**, enable replication for:
+- `orders`
+- `order_variants`
+- `order_logs`
+- `stages`
+
+Changes made on one PC (creating orders, toggling variants, moving stages) will automatically appear on all other connected devices.
+
+---
+
 ## 🛠 Tech Stack
 - **Frontend**: Vite + TypeScript + Vanilla CSS
 - **Database**: Supabase (Postgres)

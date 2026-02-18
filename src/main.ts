@@ -6,6 +6,7 @@ import './styles/global.css';
 import { initStore } from './data/store';
 import { route, startRouter } from './router';
 import { mountNav } from './components/bottomNav';
+import { startRealtime } from './data/realtime';
 
 // Import screens
 import { renderDashboard } from './screens/dashboard';
@@ -34,3 +35,4 @@ window.addEventListener('hashchange', () => mountNav());
 // ── Start ──
 startRouter();
 mountNav();
+startRealtime();
